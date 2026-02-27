@@ -6,52 +6,54 @@ import time
 # ページの設定
 st.set_page_config(page_title="リアル古代魚水槽", layout="wide")
 
-# 背景動画を設定するHTML
-def get_base_html(video_path):
+# --- 背景動画を固定するための関数 ---
+# ボタンを押しても消えないよう、関数外（メインフロー）で常に呼び出されるようにします
+def display_background_video(video_path):
     try:
         with open(video_path, 'rb') as f:
             data = f.read()
         b64 = base64.b64encode(data).decode()
-        return f"""
+        # st.empty() を使わず、直接ヘッダー付近に埋め込むことで固定します
+        st.markdown(f"""
             <style>
-            #myVideo {{
-                position: fixed; right: 0; bottom: 0;
-                min-width: 100%; min-height: 100%;
-                z-index: -1; object-fit: cover;
+            .stApp {{
+                background-color: rgba(0,0,0,0);
             }}
-            .stApp {{ background-color: rgba(0,0,0,0); }}
+            #myVideo {{
+                position: fixed;
+                right: 0;
+                bottom: 0;
+                min-width: 100%; 
+                min-height: 100%;
+                z-index: -2; /* 魚群(z-index: 9999)より奥、UIより奥 */
+                object-fit: cover;
+            }}
             </style>
             <video autoplay loop muted playsinline id="myVideo">
-                <source src="data:video/mp4;base64,{{b64}}" type="video/mp4">
+                <source src="data:video/mp4;base64,{b64}" type="video/mp4">
             </video>
-        """.replace("{{b64}}", b64)
+        """, unsafe_allow_html=True)
     except:
-        return ""
+        st.error("動画ファイルが見つかりません。")
 
-# 背景動画の表示
-base_html = get_base_html('ancient_aquarium.mp4')
-if base_html:
-    st.markdown(base_html, unsafe_allow_html=True)
+# 1. 最初に動画を表示（これはボタン操作に関わらず毎回実行されます）
+display_background_video('ancient_aquarium.mp4')
 
 st.title("🏛️ リアル・デボン紀アクアリウム")
 
-# サイドバー設定
+# 2. サイドバー設定
 with st.sidebar:
     st.header("水槽管理パネル")
-    # ボタンが押されたらTrueを返す
     btn_fish = st.button("🐟 魚群")
 
-# 魚群ボタンが押された時の処理
+# 3. 魚群ボタンが押された時の処理
 if btn_fish:
     fish_icons = ["🐟", "🐠", "🐡", "🦈"]
     fishes_html = ""
-    # 実行のたびにユニークなID（タイムスタンプ）を作成
     run_id = int(time.time() * 1000)
-    
-    # この実行専用のアニメーションを定義（名前を変えることで強制的に再発動させる）
     animation_name = f"swim_left_{run_id}"
     
-    # 魚群のスタイル定義
+    # 魚群専用のスタイル（動画とは別に定義）
     style_html = f"""
     <style>
     @keyframes {animation_name} {{
@@ -64,7 +66,7 @@ if btn_fish:
         position: fixed; 
         left: 110vw; 
         pointer-events: none; 
-        z-index: 9999;
+        z-index: 9999; /* 動画より手前に表示 */
         animation: {animation_name} 4s linear forwards;
     }}
     </style>
@@ -78,5 +80,5 @@ if btn_fish:
         icon = random.choice(fish_icons)
         fishes_html += f'<div class="fish-{run_id}" style="top:{top}%; animation-delay:{delay}s; animation-duration:{speed}s; font-size:{size}px;">{icon}</div>'
     
-    # スタイルと魚群をまとめて表示
+    # 魚群だけを追加で描画（動画のHTMLとは干渉しません）
     st.markdown(style_html + fishes_html, unsafe_allow_html=True)
