@@ -1,49 +1,31 @@
 import streamlit as st
 import base64
-import time
 import random
 
 # ページの設定
 st.set_page_config(page_title="リアル古代魚水槽", layout="wide")
 
-# 動画背景を設定するHTML
-def get_video_html(video_path):
+# 背景動画を設定し、魚群アニメーションの「型」を定義するHTML
+def get_base_html(video_path):
     with open(video_path, 'rb') as f:
         data = f.read()
     b64 = base64.b64encode(data).decode()
     return f"""
         <style>
         #myVideo {{
-            position: fixed;
-            right: 0;
-            bottom: 0;
-            min-width: 100%; 
-            min-height: 100%;
-            z-index: -1;
-            object-fit: cover;
+            position: fixed; right: 0; bottom: 0;
+            min-width: 100%; min-height: 100%;
+            z-index: -1; object-fit: cover;
         }}
-        .stApp {{
-            background-color: rgba(0,0,0,0);
-        }}
-        /* 魚群のアニメーション設定 */
+        .stApp {{ background-color: rgba(0,0,0,0); }}
+        
+        /* 魚群アニメーションの定義 */
         @keyframes swim_left {{
             from {{ transform: translateX(105vw); }}
-            to {{ transform: translateX(-100vw); }}
+            to {{ transform: translateX(-150vw); }}
         }}
-        .fish-group-container {{
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 999;
-            overflow: hidden;
-        }}
-        .fish-individual {{
-            position: absolute;
-            font-size: 30px;
-            opacity: 0.7;
+        .fish {{
+            position: fixed; pointer-events: none; z-index: 9999;
             animation: swim_left 3s linear forwards;
         }}
         </style>
@@ -52,50 +34,41 @@ def get_video_html(video_path):
         </video>
     """
 
-# タイトル
+# 背景動画の表示
+try:
+    st.markdown(get_base_html('ancient_aquarium.mp4'), unsafe_allow_html=True)
+except:
+    st.error("動画が見つかりません。")
+
 st.title("🏛️ リアル・デボン紀アクアリウム")
 
-# 動画背景の読み込み
-try:
-    st.markdown(get_video_html('ancient_aquarium.mp4'), unsafe_allow_html=True)
-except:
-    st.error("動画が見つかりません。GitHubのファイル名を確認してください。")
-
-# --- 魚群の制御ロジック ---
-if 'show_school' not in st.session_state:
-    st.session_state.show_school = False
-
+# サイドバー設定
 with st.sidebar:
     st.header("水槽管理パネル")
-    # ボタン名を「魚群」に変更
-    if st.button("🐟 魚群"):
-        st.session_state.show_school = True
+    btn_fish = st.button("🐟 魚群")
 
 # 魚群ボタンが押された時の処理
-if st.session_state.show_school:
-    # 大量の魚を生成（ランダムな高さと遅延）
-    fishes_html = ""
-    fish_icons = ["🐟", "🐠", "🐡", "🦈"] # 古代魚に見立てたバリエーション
-    
-    for i in range(50): # 魚の数を50匹に増量
-        top = random.randint(5, 90)     # 出現する高さ（％）
-        delay = random.uniform(0, 1.5)  # 出現のタイミングをずらす
-        size = random.randint(20, 50)   # 魚のサイズに変化をつける
-        speed = random.uniform(2.5, 4.0) # 泳ぐスピードに変化をつける
+if btn_fish:
+    # 魚群を生成するHTML（コードが表示されないよう、コンポーネントとして実行）
+    fish_icons = ["🐟", "🐠", "🐡", "🦈"]
+    fishes = ""
+    for i in range(80):  # 80匹に増量！
+        top = random.randint(0, 95)
+        delay = random.uniform(0, 2.0)
+        speed = random.uniform(2.0, 4.0)
+        size = random.randint(20, 60)
         icon = random.choice(fish_icons)
-        
-        fishes_html += f"""
-        <div class="fish-individual" style="
-            top: {top}%; 
-            animation-delay: {delay}s; 
-            animation-duration: {speed}s;
-            font-size: {size}px;
-        ">{icon}</div>
-        """
+        fishes += f'<div class="fish" style="top:{top}%; left:100%; animation-delay:{delay}s; animation-duration:{speed}s; font-size:{size}px;">{icon}</div>'
     
-    full_school_html = f'<div class="fish-group-container">{fishes_html}</div>'
-    st.markdown(full_school_html, unsafe_allow_html=True)
-    
-    # 状態のリセット
-    time.sleep(0.1)
-    st.session_state.show_school = False
+    # ここがポイント：st.componentsを使ってHTMLとして確実に実行させる
+    st.components.v1.html(f"""
+        <div id="fish-container">
+            {fishes}
+        </div>
+        <script>
+            // 一定時間後に要素を消してメモリを節約
+            setTimeout(() => {{
+                document.getElementById('fish-container').remove();
+            }}, 6000);
+        </script>
+    """, height=0) # height=0にすることで、余計な余白やコード表示を防ぎます
