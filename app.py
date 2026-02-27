@@ -1,17 +1,17 @@
 import streamlit as st
 import base64
+import time
 
-# ページの設定（タイトルなど）
+# ページの設定
 st.set_page_config(page_title="リアル古代魚水槽", layout="wide")
 
-# 動画ファイルを読み込んでWebで表示できる形式に変換する関数
+# 動画背景を設定するHTML
 def get_video_html(video_path):
     with open(video_path, 'rb') as f:
         data = f.read()
     b64 = base64.b64encode(data).decode()
     return f"""
         <style>
-        /* 背景動画を全画面に固定する設定 */
         #myVideo {{
             position: fixed;
             right: 0;
@@ -21,9 +21,30 @@ def get_video_html(video_path):
             z-index: -1;
             object-fit: cover;
         }}
-        /* Streamlitの元の背景を透明にする */
         .stApp {{
             background-color: rgba(0,0,0,0);
+        }}
+        /* 魚群のアニメーション設定 */
+        @keyframes swim_left {{
+            from {{ transform: translateX(100vw); }}
+            to {{ transform: translateX(-100vw); }}
+        }}
+        .fish-group {{
+            position: fixed;
+            top: 40%;
+            left: 0;
+            width: 100%;
+            height: 200px;
+            pointer-events: none;
+            z-index: 10;
+            display: flex;
+            gap: 50px;
+            animation: swim_left 4s linear forwards;
+        }}
+        .fish-icon {{
+            font-size: 40px;
+            opacity: 0.6;
+            filter: grayscale(0.5);
         }}
         </style>
         <video autoplay loop muted playsinline id="myVideo">
@@ -31,21 +52,41 @@ def get_video_html(video_path):
         </video>
     """
 
-# タイトル表示
+# タイトル
 st.title("🏛️ リアル・デボン紀アクアリウム")
 
-# 動画の表示実行
+# 動画背景の読み込み
 try:
-    video_html = get_video_html('ancient_aquarium.mp4')
-    st.markdown(video_html, unsafe_allow_html=True)
-    st.write("3億8千万年前の海が、最高画質で蘇りました。")
-except Exception as e:
-    st.error(f"動画の読み込みに失敗しました。ファイル名を確認してください。: {e}")
+    st.markdown(get_video_html('ancient_aquarium.mp4'), unsafe_allow_html=True)
+except:
+    st.error("動画が見つかりません。")
 
-# サイドバーに操作パネルを作成
+# --- 魚群の制御ロジック ---
+if 'show_school' not in st.session_state:
+    st.session_state.show_school = False
+
 with st.sidebar:
     st.header("水槽管理パネル")
-    st.info("デボン紀：ダンクルオステウスの時代を表示中")
-    if st.button("エサをあげる"):
-        st.balloons()
-        st.success("エサを投げ入れました！")
+    # 「魚群」ボタンに変更
+    if st.button("🐟 魚群を表示"):
+        st.session_state.show_school = True
+
+# 魚群ボタンが押された時の処理
+if st.session_state.show_school:
+    # 魚群をHTML/CSSアニメーションで表示
+    # 魚のアイコン（🐟）を並べて右から左へ流す
+    school_html = f"""
+    <div class="fish-group">
+        <div class="fish-icon">🐟</div>
+        <div class="fish-icon" style="margin-top:40px;">🐟</div>
+        <div class="fish-icon" style="margin-top:-30px;">🐟</div>
+        <div class="fish-icon">🐟</div>
+        <div class="fish-icon" style="margin-top:20px;">🐟</div>
+        <div class="fish-icon">🐟</div>
+    </div>
+    """
+    st.markdown(school_html, unsafe_allow_html=True)
+    
+    # アニメーションが終わる頃にフラグをリセット
+    time.sleep(0.1) # 表示を安定させるための微調整
+    st.session_state.show_school = False
