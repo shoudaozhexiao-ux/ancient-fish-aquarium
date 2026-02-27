@@ -6,7 +6,7 @@ import time
 # ページの設定
 st.set_page_config(page_title="リアル古代魚水槽", layout="wide")
 
-# 背景動画を設定するHTML
+# --- 背景動画を「全体中央表示」に固定するための関数 ---
 def display_background_video(video_path):
     try:
         with open(video_path, 'rb') as f:
@@ -14,30 +14,41 @@ def display_background_video(video_path):
         b64 = base64.b64encode(data).decode()
         st.markdown(f"""
             <style>
-            .stApp {{ background-color: rgba(0,0,0,0); }}
-            #myVideo {{
-                position: fixed; right: 0; bottom: 0;
-                min-width: 100%; min-height: 100%;
-                z-index: -2; object-fit: cover;
+            /* Streamlit全体の余白をゼロにする */
+            .main .block-container {{
+                padding: 0;
+                max-width: 100%;
             }}
-            /* メイン画面のボタンを右上に固定するスタイル */
+            .stApp {{ background-color: rgba(0,0,0,0); }}
+            
+            #myVideo {{
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                min-width: 100%; 
+                min-height: 100%;
+                width: auto;
+                height: auto;
+                z-index: -2;
+                /* 中央寄せの決定版：真ん中にずらして配置 */
+                transform: translate(-50%, -50%);
+                /* 隙間なく埋める設定 */
+                object-fit: cover;
+            }}
+
+            /* ボタンのデザイン（右上固定） */
             .stButton > button {{
                 position: fixed;
                 top: 20px;
                 right: 20px;
                 z-index: 10000;
-                background-color: rgba(255, 255, 255, 0.2) !important;
+                background-color: rgba(0, 50, 100, 0.4) !important;
                 color: white !important;
                 border: 1px solid rgba(255, 255, 255, 0.5) !important;
-                backdrop-filter: blur(5px);
-                border-radius: 20px !important;
-                padding: 10px 20px !important;
-                transition: all 0.3s;
-            }}
-            .stButton > button:hover {{
-                background-color: rgba(255, 255, 255, 0.4) !important;
-                border: 1px solid white !important;
-                transform: scale(1.05);
+                backdrop-filter: blur(8px);
+                border-radius: 30px !important;
+                padding: 12px 24px !important;
+                font-weight: bold !important;
             }}
             </style>
             <video autoplay loop muted playsinline id="myVideo">
@@ -50,8 +61,7 @@ def display_background_video(video_path):
 # 1. 動画を表示
 display_background_video('ancient_aquarium.mp4')
 
-# 2. メイン画面にボタンを配置（サイドバーから出しました）
-# ※ st.title の下などに置くと、スクロールしても右上に固定されます
+# 2. ボタンを配置
 btn_fish = st.button("🐟 魚群を呼ぶ")
 
 # 3. 魚群ボタンが押された時の処理
