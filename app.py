@@ -1,6 +1,7 @@
 import streamlit as st
 import base64
 import random
+import time
 
 # ページの設定
 st.set_page_config(page_title="リアル古代魚水槽", layout="wide")
@@ -40,29 +41,36 @@ def get_base_html(video_path):
 try:
     st.markdown(get_base_html('ancient_aquarium.mp4'), unsafe_allow_html=True)
 except:
-    st.error("動画ファイル 'ancient_aquarium.mp4' が見つかりません。")
+    st.error("動画ファイルが見つかりません。")
 
 st.title("🏛️ リアル・デボン紀アクアリウム")
+
+# --- 状態管理の初期化 ---
+# ボタンを押した回数を記録するカウンターを作ります
+if 'fish_trigger' not in st.session_state:
+    st.session_state.fish_trigger = 0
 
 # サイドバー設定
 with st.sidebar:
     st.header("水槽管理パネル")
-    # ボタンが押されたことを判定
-    btn_fish = st.button("🐟 魚群")
+    # ボタンを押すとカウンターを+1する
+    if st.button("🐟 魚群"):
+        st.session_state.fish_trigger += 1
 
-# 魚群ボタンが押された時の処理
-if btn_fish:
+# カウンターが0より大きい場合（ボタンが押された場合）に魚群を描画
+if st.session_state.fish_trigger > 0:
     fish_icons = ["🐟", "🐠", "🐡", "🦈"]
     fishes_html = ""
-    # 100匹に増やして「埋め尽くす」感を強化
+    
+    # 100匹の魚を生成
+    # キー（key）をカウンターに連動させることで、毎回「新しい要素」として認識させます
     for i in range(100):
         top = random.randint(0, 95)
-        delay = random.uniform(0, 3.0)  # 3秒かけて次々と現れる
-        speed = random.uniform(3.0, 5.0) # 泳ぐ速さに個体差
-        size = random.randint(20, 70)   # 大きさに個体差
+        delay = random.uniform(0, 3.0)
+        speed = random.uniform(3.0, 5.0)
+        size = random.randint(20, 70)
         icon = random.choice(fish_icons)
-        
         fishes_html += f'<div class="fish" style="top:{top}%; animation-delay:{delay}s; animation-duration:{speed}s; font-size:{size}px;">{icon}</div>'
     
-    # st.markdownを使って直接ボディに流し込む（コンポーネントを使わない方法に変更）
-    st.markdown(f'<div id="fish-tank">{fishes_html}</div>', unsafe_allow_html=True)
+    # 一意のID（カウンターを含む）を付与してHTMLを流し込む
+    st.markdown(f'<div id="fish-tank-{st.session_state.fish_trigger}">{fishes_html}</div>', unsafe_allow_html=True)
