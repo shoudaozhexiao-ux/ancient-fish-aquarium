@@ -1,6 +1,7 @@
 import streamlit as st
 import base64
 import time
+import random
 
 # ページの設定
 st.set_page_config(page_title="リアル古代魚水槽", layout="wide")
@@ -26,25 +27,24 @@ def get_video_html(video_path):
         }}
         /* 魚群のアニメーション設定 */
         @keyframes swim_left {{
-            from {{ transform: translateX(100vw); }}
+            from {{ transform: translateX(105vw); }}
             to {{ transform: translateX(-100vw); }}
         }}
-        .fish-group {{
+        .fish-group-container {{
             position: fixed;
-            top: 40%;
+            top: 0;
             left: 0;
             width: 100%;
-            height: 200px;
+            height: 100%;
             pointer-events: none;
-            z-index: 10;
-            display: flex;
-            gap: 50px;
-            animation: swim_left 4s linear forwards;
+            z-index: 999;
+            overflow: hidden;
         }}
-        .fish-icon {{
-            font-size: 40px;
-            opacity: 0.6;
-            filter: grayscale(0.5);
+        .fish-individual {{
+            position: absolute;
+            font-size: 30px;
+            opacity: 0.7;
+            animation: swim_left 3s linear forwards;
         }}
         </style>
         <video autoplay loop muted playsinline id="myVideo">
@@ -59,7 +59,7 @@ st.title("🏛️ リアル・デボン紀アクアリウム")
 try:
     st.markdown(get_video_html('ancient_aquarium.mp4'), unsafe_allow_html=True)
 except:
-    st.error("動画が見つかりません。")
+    st.error("動画が見つかりません。GitHubのファイル名を確認してください。")
 
 # --- 魚群の制御ロジック ---
 if 'show_school' not in st.session_state:
@@ -67,26 +67,35 @@ if 'show_school' not in st.session_state:
 
 with st.sidebar:
     st.header("水槽管理パネル")
-    # 「魚群」ボタンに変更
-    if st.button("🐟 魚群を表示"):
+    # ボタン名を「魚群」に変更
+    if st.button("🐟 魚群"):
         st.session_state.show_school = True
 
 # 魚群ボタンが押された時の処理
 if st.session_state.show_school:
-    # 魚群をHTML/CSSアニメーションで表示
-    # 魚のアイコン（🐟）を並べて右から左へ流す
-    school_html = f"""
-    <div class="fish-group">
-        <div class="fish-icon">🐟</div>
-        <div class="fish-icon" style="margin-top:40px;">🐟</div>
-        <div class="fish-icon" style="margin-top:-30px;">🐟</div>
-        <div class="fish-icon">🐟</div>
-        <div class="fish-icon" style="margin-top:20px;">🐟</div>
-        <div class="fish-icon">🐟</div>
-    </div>
-    """
-    st.markdown(school_html, unsafe_allow_html=True)
+    # 大量の魚を生成（ランダムな高さと遅延）
+    fishes_html = ""
+    fish_icons = ["🐟", "🐠", "🐡", "🦈"] # 古代魚に見立てたバリエーション
     
-    # アニメーションが終わる頃にフラグをリセット
-    time.sleep(0.1) # 表示を安定させるための微調整
+    for i in range(50): # 魚の数を50匹に増量
+        top = random.randint(5, 90)     # 出現する高さ（％）
+        delay = random.uniform(0, 1.5)  # 出現のタイミングをずらす
+        size = random.randint(20, 50)   # 魚のサイズに変化をつける
+        speed = random.uniform(2.5, 4.0) # 泳ぐスピードに変化をつける
+        icon = random.choice(fish_icons)
+        
+        fishes_html += f"""
+        <div class="fish-individual" style="
+            top: {top}%; 
+            animation-delay: {delay}s; 
+            animation-duration: {speed}s;
+            font-size: {size}px;
+        ">{icon}</div>
+        """
+    
+    full_school_html = f'<div class="fish-group-container">{fishes_html}</div>'
+    st.markdown(full_school_html, unsafe_allow_html=True)
+    
+    # 状態のリセット
+    time.sleep(0.1)
     st.session_state.show_school = False
